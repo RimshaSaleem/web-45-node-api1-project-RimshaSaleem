@@ -5,45 +5,63 @@ const server = express()
 server.use(express.json())
 module.exports = server; // EXPORT YOUR SERVER instead of {}
 
-server.post('/api/users',(req,res)=>{
-   const user = req.body;
-   if(!user.name || !user.bio){
-       res.status(400).json({
-         message: "Please provide name and bio for the user",
-       })
-    }
-    else{
+server.delete('/api/users/:id', async (req, res )=>{
+    try{
+const userDelete = await User.findById(req.params.id)
+if(!userDelete){
+    res.status(404).json({
+         message: "The user with the specified ID does not exist" ,
+    })
+}
+else{
+    const userdelete = await User.remove(userDelete.id)
+    res.status(200).json(userdelete)
+}
+} catch (err) {
+    res.status(500).json({
+        message: 'error deleting user',
+        err: err.message,
+        stack: err.stack,
+    })
+
+}
+});
+server.post('/api/users', (req, res) => {
+    const user = req.body;
+    if (!user.name || !user.bio) {
+        res.status(400).json({
+            message: 'message: "Please provide name and bio for the user'
+        })
+    } else {
         User.insert(user)
-    .then(newUser => {
-        console.log(newUser)
-         res.status(201).json(newUse)
-      })
-      .catch(err => {
-        console.log(err)
-        res.status(500).json({ 
-            message: 'error getting users',
-            err: err.message })
-      })
-    
+        .then(createdUser => {
+            res.status(201).json(createdUser)
+        })
+        .catch(err => {
+            res.status(500).json({
+                message: 'error creating user',
+                err: err.message,
+                stack: err.stack,
+            })
+        })
     }
-   
-})
+});
 
 
 server.get('/api/users', (req, res) => {
     User.find()
     .then(users => {
-        console.log(users)
         res.json(users)
-        // res.status(200).json(dogs)
-      })
-      .catch(err => {
-        console.log(err)
-        res.status(500).json({ 
+    })
+    .catch(err => {
+        res.status(500).json({
             message: 'error getting users',
-            err: err.message })
-      })
-  })
+            err: err.message,
+            stack: err.stack,
+        })
+    })
+});
+
   server.get('/api/users/:id', (req, res) => {
     User.findById(req.params.id)
     .then(user => {
@@ -63,3 +81,8 @@ server.get('/api/users', (req, res) => {
             err: err.message })
       })
   })
+  server.use('*', (req, res) => {
+    res.status(404).json({
+        message: 'not found'
+    })
+});
